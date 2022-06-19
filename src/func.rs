@@ -12,8 +12,13 @@ pub mod mdm{
             Ok(repo) => repo,
             Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
         };
-        let br= &mut repo.find_branch("master",BranchType::Local).expect("Something went wrong");
-        br.rename("main",true).expect("Something went wrong while remaning the branch");
+        let mut main_br = repo.find_branch("main",BranchType::Local).unwrap();
+        let mut br= match repo.find_branch("master",BranchType::Local){
+            Ok(br) => br,
+            Err(e) => main_br
+        };
+
+        br.rename("main",true).unwrap();
         making_file();
     }
 
@@ -52,7 +57,6 @@ pub mod mdm{
         let today = date_printer();
         let path = "./data/".to_string() + &today + ".txt";
         let variant = matches!(can_make_file(),CanMakeFile::Yes);
-        println!("Varient is {}",variant);
         if variant == true{
             let mut file = File::create(path.as_str()).expect("idk");
         }
