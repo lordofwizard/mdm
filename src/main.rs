@@ -19,6 +19,5 @@ fn main() {
     };
     let br= &mut repo.find_branch("master",BranchType::Local).expect("Something went wrong");
     br.rename("main",true);
-    println!("Hello, Gaurav!");
 }
 
