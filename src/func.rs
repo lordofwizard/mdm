@@ -14,6 +14,7 @@ pub mod mdm{
         };
         let br= &mut repo.find_branch("master",BranchType::Local).expect("Something went wrong");
         br.rename("main",true).expect("Something went wrong while remaning the branch");
+        making_file();
     }
 
     enum CanMakeFile{
@@ -32,27 +33,22 @@ pub mod mdm{
         else{
             let path = "./data/".to_string() + &today + ".txt";
 
-            let mut result : CanMakeFile = match File::create(path.as_str()){
-                Ok(file) => CanMakeFile::Yes,
-                Err(e) => CanMakeFile::No,
+            let result : CanMakeFile = match File::create(path.as_str()){
+                Ok(_file) => CanMakeFile::Yes,
+                Err(_e) => CanMakeFile::No,
             };
             result
         }     
         
 
     }
-    fn database_maker(){
 
-    }   
-    fn data_pusher(){
-
-    }
     use chrono::*;
-    pub fn date_printer() -> String{
+    fn date_printer() -> String{
         let local= Local::today().to_string();
         local
     }
-    pub fn making_file(){
+    fn making_file(){
         let today = date_printer();
         let path = "./data/".to_string() + &today + ".txt";
         let variant = matches!(can_make_file(),CanMakeFile::Yes);
@@ -63,5 +59,5 @@ pub mod mdm{
         else{
             println!("{}","File Already exists or something wrong with the path".red());
         }
-        }
+    }
 }
