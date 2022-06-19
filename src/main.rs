@@ -18,6 +18,6 @@ fn main() {
         Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
     };
     let br= &mut repo.find_branch("master",BranchType::Local).expect("Something went wrong");
-    br.rename("main",true);
+    br.rename("main",true).expect("Something went wrong while remaning the branch");
 }
 
