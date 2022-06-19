@@ -1,0 +1,7 @@
+Things to do in making this program
+* Initializing the repository 
+* Making functionality to take a string as input in args
+* Storing this string and Pushing it inside a database file
+* Pulling any exsisting changes..
+* Pushing this changes
+* Learn Authentication with git-ssh with github.
