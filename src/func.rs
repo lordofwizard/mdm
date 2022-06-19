@@ -12,10 +12,10 @@ pub mod mdm{
             Ok(repo) => repo,
             Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
         };
-        let mut main_br = repo.find_branch("main",BranchType::Local).unwrap();
+        let main_br = repo.find_branch("main",BranchType::Local).unwrap();
         let mut br= match repo.find_branch("master",BranchType::Local){
             Ok(br) => br,
-            Err(e) => main_br
+            Err(_e) => main_br
         };
 
         br.rename("main",true).unwrap();
