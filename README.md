@@ -1,5 +1,5 @@
 # Minimal Diary Manager
-
+---
 
 this project is a command line application that takes command line arguments as work snippets and push them to a centralized file storage with specific commit date/time... and uploads them to a remote repository.
 ---
