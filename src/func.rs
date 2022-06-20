@@ -38,10 +38,10 @@ pub mod mdm{
         //mdm_git::push(&repo,"git@github.com:lordofwizard/temp_data.git").expect("counldn't push bitch");
         use std::process::Command;
         Command::new("git")
-        .current_dir("./data").args(["push","origin","main"])
+        .current_dir("./data").args(["push","--quiet","-u","--no-progress","origin","main"])
         .spawn()
         .expect("ls command failed to start");
-
+        println!("{}", "Succesfully Uploaded to github".green());
     }
 
     enum CanMakeFile{
