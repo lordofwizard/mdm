@@ -1,8 +1,10 @@
 # Minimal Diary Manager
+
+
 this project is a command line application that takes command line arguments as work snippets and push them to a centralized file storage with specific commit date/time... and uploads them to a remote repository.
 ---
 usage is very easy
-* How to run this program
+* How to run this program  
 ```mdm "Message anything random xyz... i ate coffee bean lol"```  
 that's it
 
