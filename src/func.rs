@@ -1,11 +1,15 @@
 
 // File to store all the basic functionality 
 pub mod mdm{
+    
     use colored::*;
     use git2::BranchType;
     use git2::Repository;
     use std::fs::File;
     use std::path::Path;
+    pub use crate::git::mdm_git;
+    use crate::git::mdm_git::add_all;
+    use crate::git::mdm_git::commit;
 
     pub fn run(){
         let repo = match Repository::open("./data/") {
@@ -29,6 +33,14 @@ pub mod mdm{
         let dat = data();
         println!("{}",&dat);
         file.write_all(dat.as_bytes()).expect("Unable to put data inside the file");
+        add_all(&repo);
+        commit(&repo);
+        //mdm_git::push(&repo,"git@github.com:lordofwizard/temp_data.git").expect("counldn't push bitch");
+        use std::process::Command;
+        Command::new("git")
+        .current_dir("./data").args(["push","origin","main"])
+        .spawn()
+        .expect("ls command failed to start");
 
     }
 
@@ -87,7 +99,7 @@ pub mod mdm{
         pattern
     }
     fn data() -> String{
-        let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------";
+        let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------\n";
         data
     }
 }
