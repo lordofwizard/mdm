@@ -24,6 +24,12 @@ pub mod mdm{
 
         br.rename("main",true).unwrap();
         making_file();
+        use std::io::Write;
+        let mut file = making_file();
+        let dat = data();
+        println!("{}",&dat);
+        file.write_all(dat.as_bytes()).expect("Unable to put data inside the file");
+
     }
 
     enum CanMakeFile{
@@ -57,15 +63,31 @@ pub mod mdm{
         let local= Local::today().to_string();
         local
     }
-    fn making_file(){
+    fn making_file()-> File{
+        use std::fs::OpenOptions;
         let today = date_printer();
         let path = "./data/".to_string() + &today + ".txt";
         let variant = matches!(can_make_file(),CanMakeFile::Yes);
         if variant == true{
-            let mut file = File::create(path.as_str()).expect("idk");
+            let file = File::create(path.as_str()).expect("Error while CREATING the file");
+            file
         }
-        else{
-            println!("{}","File Already exists or something wrong with the path".red());
+        else if std::path::Path::new(path.as_str()).exists() == true {
+            println!("File is already present good that's nice");
+            OpenOptions::new().append(true).open(path.as_str()).expect("Error opening the file bitch")
         }
+        else {
+            panic!("something went wrong while making the file");
+        }
+        
+
+    }
+    fn user_input()-> String{
+        let pattern = std::env::args().nth(1).expect("Please input some kind of message to upload inside the file");
+        pattern
+    }
+    fn data() -> String{
+        let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------";
+        data
     }
 }
