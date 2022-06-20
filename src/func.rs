@@ -12,10 +12,14 @@ pub mod mdm{
             Ok(repo) => repo,
             Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
         };
-        let main_br = repo.find_branch("main",BranchType::Local).unwrap();
+        
+        
         let mut br= match repo.find_branch("master",BranchType::Local){
             Ok(br) => br,
-            Err(_e) => main_br
+            Err(_e) => {
+                let main_br = repo.find_branch("main",BranchType::Local).expect("main branch not found");
+                main_br
+            }
         };
 
         br.rename("main",true).unwrap();
@@ -43,7 +47,7 @@ pub mod mdm{
                 Err(_e) => CanMakeFile::No,
             };
             result
-        }     
+        }
         
 
     }
