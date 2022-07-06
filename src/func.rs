@@ -6,9 +6,7 @@ pub mod mdm{
     use git2::BranchType;
     use git2::Repository;
     use std::fs::File;
-    use std::path::Path;
-    pub use crate::git::mdm_git;
-    use crate::git::mdm_git::add_all;
+    use std::path::Path; pub use crate::git::mdm_git; use crate::git::mdm_git::add_all;
     use crate::git::mdm_git::commit;
 
     pub fn run(){
@@ -25,8 +23,11 @@ pub mod mdm{
                 main_br
             }
         };
-
+        // functionality that checks if the file has main branch if not then this given line
+        // renames branch with it.
         br.rename("main",true).unwrap();
+
+        // Call to making_file() which will check if the file exists or not.
         making_file();
         use std::io::Write;
         let mut file = making_file();
@@ -71,6 +72,7 @@ pub mod mdm{
     }
 
     use chrono::*;
+    // This function returns a own string which contains  Date in standard format.
     fn date_printer() -> String{
         let local= Local::today().to_string();
         local
@@ -94,10 +96,13 @@ pub mod mdm{
         
 
     }
+    // Takes user input and then this function gives a Owned String as output.
     fn user_input()-> String{
         let pattern = std::env::args().nth(1).expect("Please input some kind of message to upload inside the file");
         pattern
     }
+
+    // This method takes nothing but converts a string to it's part with +++ and --- at start. 
     fn data() -> String{
         let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------\n";
         data
