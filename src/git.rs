@@ -1,4 +1,4 @@
-// A specific Module to store all the functions related / used in git 
+// A specific Module to store all the functions related / used in git
 
 pub mod mdm_git{
     use git2::Repository;

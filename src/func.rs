@@ -1,7 +1,7 @@
 
-// File to store all the basic functionality 
+// File to store all the basic functionality
 pub mod mdm{
-    
+
     use colored::*;
     use git2::BranchType;
     use git2::Repository;
@@ -14,8 +14,8 @@ pub mod mdm{
             Ok(repo) => repo,
             Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
         };
-        
-        
+
+
         let mut br= match repo.find_branch("master",BranchType::Local){
             Ok(br) => br,
             Err(_e) => {
@@ -49,7 +49,7 @@ pub mod mdm{
         Yes,
         No
     }
-    
+
     fn can_make_file()-> CanMakeFile{
         let today = date_printer();
         let path = "./data/".to_string() + &today + ".txt";
@@ -67,7 +67,7 @@ pub mod mdm{
             };
             result
         }
-        
+
 
     }
 
@@ -93,7 +93,7 @@ pub mod mdm{
         else {
             panic!("something went wrong while making the file");
         }
-        
+
 
     }
     // Takes user input and then this function gives a Owned String as output.
@@ -102,7 +102,7 @@ pub mod mdm{
         pattern
     }
 
-    // This method takes nothing but converts a string to it's part with +++ and --- at start. 
+    // This method takes nothing but converts a string to it's part with +++ and --- at start.
     fn data() -> String{
         let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------\n";
         data
