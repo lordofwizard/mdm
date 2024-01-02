@@ -18,8 +18,7 @@ pub mod mdm{
 
         let mut br= match repo.find_branch("master",BranchType::Local){
             Ok(br) => br,
-            Err(_e) => {
-                let main_br = repo.find_branch("main",BranchType::Local).expect("main branch not found");
+            Err(_e) => { let main_br = repo.find_branch("main",BranchType::Local).expect("main branch not found");
                 main_br
             }
         };
@@ -67,6 +66,10 @@ pub mod mdm{
             };
             result
         }
+<<<<<<< HEAD
+=======
+        
+>>>>>>> 3aa89ad (idk whats wrong)
     }
 
     use chrono::*;
@@ -91,7 +94,10 @@ pub mod mdm{
         else {
             panic!("something went wrong while making the file");
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3aa89ad (idk whats wrong)
 
     }
     // Takes user input and then this function gives a Owned String as output.
