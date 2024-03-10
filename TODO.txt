@@ -1,8 +1,0 @@
-Things to do in making this program
-* Initializing the repository DONE
-* Writing functionality to change the name of the Master Branch -> to the Main Branch DONE
-* Making functionality to take a string as input in args DONE
-* Storing this string and Pushing it inside a database file DONE
-* Pulling any exsisting changes.. DONE
-* Pushing this changes DONE
-* Learn Authentication with git-ssh with github.

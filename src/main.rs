@@ -1,8 +1,5 @@
-pub mod func;
-pub mod git;
-use func::mdm;
-
+mod func;
+use func::run;
 fn main() {
-    mdm::run();
+    run();
 }
-

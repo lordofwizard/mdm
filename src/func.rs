@@ -1,108 +1,185 @@
+use chrono::Local;
+use git2::{Cred, PushOptions, RemoteCallbacks, Repository};
+use std::{
+    env,
+    fs::File,
+    io::{Error, ErrorKind, Write},
+};
 
-// File to store all the basic functionality
-pub mod mdm{
+use git2::StatusOptions;
+use std::fs;
+use std::fs::OpenOptions;
 
-    use colored::*;
-    use git2::BranchType;
-    use git2::Repository;
-    use std::fs::File;
-    use std::path::Path; pub use crate::git::mdm_git; use crate::git::mdm_git::add_all;
-    use crate::git::mdm_git::commit;
-
-    pub fn run(){
-        let repo = match Repository::open("./data/") {
-            Ok(repo) => repo,
-            Err(e) => panic!("{} {}","Something went wrong reading the repository \n".red(),e)
-        };
-
-
-        let mut br= match repo.find_branch("master",BranchType::Local){
-            Ok(br) => br,
-            Err(_e) => {
-                let main_br = repo.find_branch("main",BranchType::Local).expect("main branch not found");
-                main_br
-            }
-        };
-        // functionality that checks if the file has main branch if not then this given line
-        // renames branch with it.
-        br.rename("main",true).unwrap();
-
-        // Call to making_file() which will check if the file exists or not.
-        making_file();
-        use std::io::Write;
-        let mut file = making_file();
-        let dat = data();
-        println!("{}",&dat);
-        file.write_all(dat.as_bytes()).expect("Unable to put data inside the file");
-        add_all(&repo);
-        commit(&repo);
-        //mdm_git::push(&repo,"git@github.com:lordofwizard/temp_data.git").expect("counldn't push bitch");
-        use std::process::Command;
-        Command::new("git")
-        .current_dir("./data").args(["push","--quiet","-u","--no-progress","origin","main"])
-        .spawn()
-        .expect("ls command failed to start");
-        println!("{}", "Succesfully Uploaded to github".green());
+pub fn run() {
+    // This function is the main trigger of the whole program
+    create_cache_folder();
+    let message: String = get_args_as_string();
+    match write_or_create_file(
+        format!("{}/{}.txt", cache_folder_path().unwrap(), file_name()),
+        message,
+    ) {
+        Err(err) => eprintln!("Error: {}", err),
+        _ => {}
     }
 
-    enum CanMakeFile{
-        Yes,
-        No
+    match check_and_commit_to_git_repo(cache_folder_path().unwrap().as_str()) {
+        Ok(()) => {}
+        _ => {}
     }
+}
 
-    fn can_make_file()-> CanMakeFile{
-        let today = date_printer();
-        let path = "./data/".to_string() + &today + ".txt";
-        let path = Path::new(&path);
-        if std::path::Path::exists(path) == true{
-            println!("{}", "Hurray file already exists".blue());
-            CanMakeFile::No
-        }
-        else{
-            let path = "./data/".to_string() + &today + ".txt";
+fn get_args_as_string() -> String {
+    // Retrieve command-line arguments
+    let args: Vec<String> = env::args().collect();
 
-            let result : CanMakeFile = match File::create(path.as_str()){
-                Ok(_file) => CanMakeFile::Yes,
-                Err(_e) => CanMakeFile::No,
+    // Join the arguments into a single string, excluding the first argument (program name)
+    let joined_args: String = args
+        .iter()
+        .skip(1)
+        .cloned()
+        .collect::<Vec<String>>()
+        .join(" ");
+
+    // Return the joined arguments
+    joined_args
+}
+
+fn file_name() -> String {
+    // This function returns a String that contains the file_name we are gonna use
+    // for example the file name is generally in this format
+    // year-month-day+time_in_the_world.txt
+    // For me, its kolkatta i.e. 5.30 + from global time.
+
+    let time_stamp: String = Local::today().to_string();
+    time_stamp
+}
+
+fn check_and_commit_to_git_repo(path: &str) -> Result<(), git2::Error> {
+    let repo = match Repository::open(path) {
+        Ok(repo) => repo,
+        Err(_) => {
+            let path = cache_folder_path().unwrap();
+            let repo = match Repository::init(path) {
+                Ok(repo) => repo,
+                Err(e) => panic!("failed to init: {}", e),
             };
-            result
+            println!(
+                "REPOSITORY WASN\"T PRESENT, RECOMMENDED TO FOLLOW THE GUIDE AND SETUP PRPOERLY"
+            );
+            repo
         }
-    }
+    };
 
-    use chrono::*;
-    // This function returns a own string which contains  Date in standard format.
-    fn date_printer() -> String{
-        let local= Local::today().to_string();
-        local
+    // Check if there are any changes
+    let mut opts = StatusOptions::new();
+    opts.include_untracked(true);
+    let statuses = repo.statuses(Some(&mut opts))?;
+
+    if !statuses.is_empty() {
+        println!("Changes detected in the repository at {}", path);
+        let mut index = repo.index()?;
+        index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+
+        // Commit changes
+        let tree_id = index.write_tree()?;
+        let tree = repo.find_tree(tree_id)?;
+        let sig = repo.signature()?;
+        let head = repo.head()?;
+        let parent_commit = repo.find_commit(head.target().unwrap())?;
+        repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            "Committed changes",
+            &tree,
+            &[&parent_commit],
+        )?;
+        // Push changes to remote origin
+        // Get the default remote (e.g., "origin")
+        let mut remote = repo.find_remote("origin")?;
+
+        // Create push options
+        let mut push_opts = PushOptions::new();
+        // You can set additional options here if needed
+
+        // Set up SSH credentials callback
+        let mut callbacks = RemoteCallbacks::new();
+        callbacks.credentials(|_url, _username, cred_type| {
+            if cred_type.contains(git2::CredentialType::SSH_KEY) {
+                // Provide SSH credentials from an SSH agent
+                Cred::ssh_key_from_agent("lordofwizard")
+            } else {
+                // For other credential types (e.g., username/password),
+                // you can use different methods like Cred::userpass_plaintext
+                // to provide credentials
+                Err(git2::Error::from_str("unsupported credential type"))
+            }
+        });
+
+        // Set the credentials callback
+        push_opts.remote_callbacks(callbacks);
+
+        // Perform the push
+        match remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut push_opts)) {
+            Ok(()) => {
+                println!("Changes committed and pushed to remote origin.");
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                Ok(())
+            }
+        }
+    } else {
+        println!("No changes detected in the repository at {}", path);
+        Ok(())
     }
-    fn making_file()-> File{
-        use std::fs::OpenOptions;
-        let today = date_printer();
-        let path = "./data/".to_string() + &today + ".txt";
-        let variant = matches!(can_make_file(),CanMakeFile::Yes);
-        if variant == true{
-            let file = File::create(path.as_str()).expect("Error while CREATING the file");
+}
+
+fn write_or_create_file(path: String, data: String) -> Result<(), Error> {
+    // Open the file in write mode, creating it if it doesn't exist
+    let mut present = false;
+    let mut file = match OpenOptions::new().create(true).append(true).open(&path) {
+        Ok(file) => {
+            present = true;
             file
         }
-        else if std::path::Path::new(path.as_str()).exists() == true {
-            println!("File is already present good that's nice");
-            OpenOptions::new().append(true).open(path.as_str()).expect("Error opening the file bitch")
+        Err(ref err) if err.kind() == ErrorKind::NotFound => File::create(&path)?,
+        Err(err) => return Err(err),
+    };
+    if present == true {}
+    // Write the data into the file
+    file.write_all(format!("{}\n", data).as_bytes())?;
+
+    // Flush the file to ensure all data is written
+    file.flush()?;
+
+    Ok(())
+}
+
+fn cache_folder_path() -> Option<String> {
+    let home_dir = match env::var("HOME") {
+        Ok(path) => path,
+        Err(_) => {
+            println!("Unable to determine home directory.");
+            return Option::None;
         }
-        else {
-            panic!("something went wrong while making the file");
+    };
+    return Some(format!("{}/.cache/mdm", home_dir));
+}
+
+fn create_cache_folder() {
+    // Get the home directory
+
+    let cache_folder_path: String = cache_folder_path().unwrap();
+
+    if fs::metadata(&cache_folder_path).is_ok() {
+        //println!("Folder already present: {}", cache_folder_path);
+    } else {
+        if let Err(err) = fs::create_dir_all(&cache_folder_path) {
+            println!("Error creating cache folder: {}", err);
+        } else {
+            println!("Cache folder created: {}", cache_folder_path);
         }
-
-
-    }
-    // Takes user input and then this function gives a Owned String as output.
-    fn user_input()-> String{
-        let pattern = std::env::args().nth(1).expect("Please input some kind of message to upload inside the file");
-        pattern
-    }
-
-    // This method takes nothing but converts a string to it's part with +++ and --- at start.
-    fn data() -> String{
-        let data : String = "+++++++++++++++++++++++++++++++++++++++++\n".to_owned() + &user_input() + "\n-------------------------------------------\n";
-        data
     }
 }
