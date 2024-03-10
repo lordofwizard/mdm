@@ -1,23 +1,29 @@
-use std::{env, fs::File, io::{ErrorKind, Error, Write}};
 use chrono::Local;
 use git2::{Cred, PushOptions, RemoteCallbacks, Repository};
+use std::{
+    env,
+    fs::File,
+    io::{Error, ErrorKind, Write},
+};
 
-use git2::{StatusOptions};
+use git2::StatusOptions;
 use std::fs;
 use std::fs::OpenOptions;
 
-
-pub fn run(){
+pub fn run() {
     // This function is the main trigger of the whole program
     create_cache_folder();
-    let message : String = get_args_as_string();
-    match write_or_create_file(format!("{}/{}.txt",cache_folder_path().unwrap(),file_name()), message){
+    let message: String = get_args_as_string();
+    match write_or_create_file(
+        format!("{}/{}.txt", cache_folder_path().unwrap(), file_name()),
+        message,
+    ) {
         Err(err) => eprintln!("Error: {}", err),
         _ => {}
     }
-    
+
     match check_and_commit_to_git_repo(cache_folder_path().unwrap().as_str()) {
-        Ok(()) => {},
+        Ok(()) => {}
         _ => {}
     }
 }
@@ -27,7 +33,12 @@ fn get_args_as_string() -> String {
     let args: Vec<String> = env::args().collect();
 
     // Join the arguments into a single string, excluding the first argument (program name)
-    let joined_args: String = args.iter().skip(1).cloned().collect::<Vec<String>>().join(" ");
+    let joined_args: String = args
+        .iter()
+        .skip(1)
+        .cloned()
+        .collect::<Vec<String>>()
+        .join(" ");
 
     // Return the joined arguments
     joined_args
@@ -38,11 +49,10 @@ fn file_name() -> String {
     // for example the file name is generally in this format
     // year-month-day+time_in_the_world.txt
     // For me, its kolkatta i.e. 5.30 + from global time.
-    
+
     let time_stamp: String = Local::today().to_string();
     time_stamp
 }
-
 
 fn check_and_commit_to_git_repo(path: &str) -> Result<(), git2::Error> {
     let repo = match Repository::open(path) {
@@ -53,10 +63,11 @@ fn check_and_commit_to_git_repo(path: &str) -> Result<(), git2::Error> {
                 Ok(repo) => repo,
                 Err(e) => panic!("failed to init: {}", e),
             };
-            println!("REPOSITORY WASN\"T PRESENT, RECOMMENDED TO FOLLOW THE GUIDE AND SETUP PRPOERLY");
+            println!(
+                "REPOSITORY WASN\"T PRESENT, RECOMMENDED TO FOLLOW THE GUIDE AND SETUP PRPOERLY"
+            );
             repo
         }
-        
     };
 
     // Check if there are any changes
@@ -81,43 +92,64 @@ fn check_and_commit_to_git_repo(path: &str) -> Result<(), git2::Error> {
             &sig,
             "Committed changes",
             &tree,
-            &[&parent_commit]
+            &[&parent_commit],
         )?;
-
         // Push changes to remote origin
+        // Get the default remote (e.g., "origin")
         let mut remote = repo.find_remote("origin")?;
-        match remote.push(&["refs/heads/main:refs/heads/main"], None){
-            Ok(()) => {},
-            Err(E) =>eprintln!("Error : {}",E)
-        };
-        println!("Changes committed and pushed to remote origin.");
+
+        // Create push options
+        let mut push_opts = PushOptions::new();
+        // You can set additional options here if needed
+
+        // Set up SSH credentials callback
+        let mut callbacks = RemoteCallbacks::new();
+        callbacks.credentials(|_url, _username, cred_type| {
+            if cred_type.contains(git2::CredentialType::SSH_KEY) {
+                // Provide SSH credentials from an SSH agent
+                Cred::ssh_key_from_agent("lordofwizard")
+            } else {
+                // For other credential types (e.g., username/password),
+                // you can use different methods like Cred::userpass_plaintext
+                // to provide credentials
+                Err(git2::Error::from_str("unsupported credential type"))
+            }
+        });
+
+        // Set the credentials callback
+        push_opts.remote_callbacks(callbacks);
+
+        // Perform the push
+        match remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut push_opts)) {
+            Ok(()) => {
+                println!("Changes committed and pushed to remote origin.");
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                Ok(())
+            }
+        }
     } else {
         println!("No changes detected in the repository at {}", path);
+        Ok(())
     }
-
-    Ok(())
 }
-
-
 
 fn write_or_create_file(path: String, data: String) -> Result<(), Error> {
     // Open the file in write mode, creating it if it doesn't exist
-    let mut  present = false;
-    let mut file = match OpenOptions::new().create(true).append(true).open(&path){
+    let mut present = false;
+    let mut file = match OpenOptions::new().create(true).append(true).open(&path) {
         Ok(file) => {
             present = true;
             file
         }
-        Err(ref err) if err.kind() == ErrorKind::NotFound => {
-            File::create(&path)?
-        }
+        Err(ref err) if err.kind() == ErrorKind::NotFound => File::create(&path)?,
         Err(err) => return Err(err),
     };
-    if present == true {
-        
-    }
+    if present == true {}
     // Write the data into the file
-    file.write_all(data.as_bytes())?;
+    file.write_all(format!("{}\n", data).as_bytes())?;
 
     // Flush the file to ensure all data is written
     file.flush()?;
@@ -125,15 +157,15 @@ fn write_or_create_file(path: String, data: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn cache_folder_path() -> Option<String>{
+fn cache_folder_path() -> Option<String> {
     let home_dir = match env::var("HOME") {
         Ok(path) => path,
         Err(_) => {
             println!("Unable to determine home directory.");
-            return Option::None
+            return Option::None;
         }
     };
-    return Some(format!("{}/.cache/mdm", home_dir))
+    return Some(format!("{}/.cache/mdm", home_dir));
 }
 
 fn create_cache_folder() {
@@ -151,4 +183,3 @@ fn create_cache_folder() {
         }
     }
 }
-

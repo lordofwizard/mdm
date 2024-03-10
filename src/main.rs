@@ -3,4 +3,3 @@ use func::run;
 fn main() {
     run();
 }
-
