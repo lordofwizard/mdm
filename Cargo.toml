@@ -9,3 +9,5 @@ edition = "2021"
 git2 = "0.15.0"
 colored = "2.0.0"
 chrono = "0.4"
+confy = "0.6.1"
+serde = { version = "1.0.197", features = ["derive"]}
